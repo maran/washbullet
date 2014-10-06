@@ -1,23 +1,23 @@
 module Washbullet
   module API
     module Pushes
-      def push_note(device_iden, title, body)
-        push :note, device_iden, title: title, body: body
+      def push_note(target, title, body)
+        push :note, target, title: title, body: body
       end
 
-      def push_link(device_iden, title, url, body)
-        push :link, device_iden, title: title, url: url, body: body
+      def push_link(target, title, url, body)
+        push :link, target, title: title, url: url, body: body
       end
 
-      def push_address(device_iden, name, address)
-        push :address, device_iden, name: name, address: address
+      def push_address(target, name, address)
+        push :address, target, name: name, address: address
       end
 
-      def push_list(device_iden, title, items)
-        push :list, device_iden, title: title, items: items
+      def push_list(target, title, items)
+        push :list, target, title: title, items: items
       end
 
-      def push_file(device_iden, file_name, file_path, body)
+      def push_file(target, file_name, file_path, body)
         upload_file(file_name, file_path) do |data|
           payload = {
             file_name: data['file_name'],
@@ -26,7 +26,7 @@ module Washbullet
             body:      body
           }
 
-          push :file, device_iden, payload
+          push :file, target, payload
         end
       end
 
@@ -63,8 +63,12 @@ module Washbullet
         get '/v2/upload-request', file_name: file_name, file_type: mime_type
       end
 
-      def push(type, device_iden, payload)
-        post '/v2/pushes', payload.merge(device_iden: device_iden, type: type)
+      def push(type, target, payload)
+        if target.is_a?(Hash) && [:device_iden, :email, :channel_tag, :client_iden].include?(target.keys.first)
+          post '/v2/pushes', payload.merge(type: type).merge(target)
+        else
+          post '/v2/pushes', payload.merge(device_iden: target, type: type)
+        end
       end
     end
   end
